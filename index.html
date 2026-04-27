@@ -28,7 +28,7 @@
         .bar-bg { background: #262626; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 12px; border: 1px solid #333; }
         .bar-fill { 
             background: linear-gradient(90deg, #d4af37, #f1c40f); 
-            height: 100%; width: 0%; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); 
+            height: 0%; width: 0%; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); 
         }
         
         .vote-btn { 
@@ -41,7 +41,6 @@
 
         #msg { margin-top: 25px; text-align: center; font-size: 14px; font-weight: bold; min-height: 20px; }
         
-        /* Loader */
         .loader { border: 3px solid #222; border-top: 3px solid var(--gold); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
@@ -67,13 +66,18 @@
 <script>
     const SCRIPT_URL = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbykNHYZ-r2yE8LC5rutEnDOLDRAH0N_1t1NF6KqTEAC3fVAvQHpQTC855m4UFSIUgJz/exec";
 
+    // Admin trick: Add ?reset=true to URL to vote again for testing
+    if (window.location.search.includes('reset=true')) {
+        localStorage.removeItem('poll_voted_verified');
+    }
+
     async function loadPollData() {
         try {
             const response = await fetch(SCRIPT_URL);
             const data = await response.json();
             const { config, totals, totalVotes } = data;
 
-            document.getElementById('question').innerText = config["Poll Question"];
+            document.getElementById('question').innerText = config["Poll Question"] || "Untitled Poll";
             document.getElementById('total-votes').innerText = `${totalVotes} TOTAL RESPONSES`;
             
             const container = document.getElementById('options-list');
@@ -85,7 +89,7 @@
                     const val = totals[label] || 0;
                     const pct = totalVotes > 0 ? Math.round((val / totalVotes) * 100) : 0;
 
-                    container.innerHTML += `
+                    const optionHTML = `
                         <div class="option-box">
                             <div class="option-label">
                                 <span>${label}</span>
@@ -94,11 +98,12 @@
                             <div class="bar-bg">
                                 <div class="bar-fill" style="width: ${pct}%"></div>
                             </div>
-                            <button class="vote-btn" ${alreadyVoted ? 'disabled' : ''} onclick="castVote('${label}')">
+                            <button class="vote-btn" ${alreadyVoted ? 'disabled' : ''} onclick="castVote('${label.replace(/'/g, "\\'")}')">
                                 ${alreadyVoted ? 'VOTE RECORDED' : 'CAST VOTE'}
                             </button>
                         </div>
                     `;
+                    container.insertAdjacentHTML('beforeend', optionHTML);
                 }
             });
 
@@ -108,10 +113,11 @@
             if(alreadyVoted) {
                 const msg = document.getElementById('msg');
                 msg.innerText = "You have already participated in this poll.";
-                msg.style.color = var(--gold);
+                msg.style.color = "var(--gold)";
             }
         } catch (err) {
-            document.getElementById('loading').innerHTML = `<p style="color:#ff4d4d">Connection Error. Please sign in to your Workspace account.</p>`;
+            console.error(err);
+            document.getElementById('loading').innerHTML = `<p style="color:#ff4d4d">Connection Error. Please sign in to your @jecc.ac.in account.</p>`;
         }
     }
 
@@ -127,7 +133,6 @@
             const formData = new URLSearchParams();
             formData.append('Choice', choice);
 
-            // Fetch for Google Apps Script Web Apps
             await fetch(SCRIPT_URL, { method: 'POST', body: formData });
 
             localStorage.setItem('poll_voted_verified', 'true');
@@ -136,7 +141,7 @@
             
             setTimeout(() => location.reload(), 1500);
         } catch (e) {
-            // Logic for potential CORS/Redirect behavior in Google Scripts
+            // Google Script redirects can cause fake errors; we assume success if it reached this point
             localStorage.setItem('poll_voted_verified', 'true');
             location.reload();
         }
