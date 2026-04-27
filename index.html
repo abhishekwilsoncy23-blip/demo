@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anonymous Voting</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .btn { padding: 10px 20px; font-size: 18px; cursor: pointer; margin: 10px; }
+        #message { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>What is your favorite color?</h1>
+    <button class="btn" onclick="castVote('Red')">Red</button>
+    <button class="btn" onclick="castVote('Blue')">Blue</button>
+    <div id="message"></div>
+
+    <!-- FingerprintJS Library -->
+    <script src="https://openfpcdn.io"></script>
+
+    <script>
+        const SCRIPT_URL = "YOUR_SCRIPT_URL"; // PASTE YOUR URL HERE
+
+        async function castVote(choice) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerText = "Processing...";
+
+            try {
+                // 1. Get the Unique Device ID
+                const fpPromise = FingerprintJS.load();
+                const fp = await fpPromise;
+                const result = await fp.get();
+                const visitorId = result.visitorId;
+
+                // 2. Prepare data
+                const formData = new URLSearchParams();
+                formData.append('Choice', choice);
+                formData.append('DeviceID', visitorId);
+
+                // 3. Send to Google Sheets
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors' // Allows sending data without complex setup
+                });
+
+                msgDiv.innerText = "Vote submitted successfully!";
+                msgDiv.style.color = "green";
+                
+                // Optional: Store in local browser to block instantly
+                localStorage.setItem('hasVoted', 'true');
+
+            } catch (error) {
+                msgDiv.innerText = "Error: Could not submit vote.";
+                msgDiv.style.color = "red";
+            }
+        }
+    </script>
+</body>
+</html>
