@@ -3,112 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.I.A Real-Time Poll</title>
+    <title>S.I.A Secure Verified Poll</title>
     <style>
-        :root { --primary: #d4af37; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .poll-card { background: var(--card); padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); width: 100%; max-width: 450px; border: 1px solid #333; }
-        
-        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
-        .vote-count { text-align: center; color: #666; font-size: 12px; margin-bottom: 25px; }
-        
-        .option-container { margin-bottom: 20px; }
-        .option-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; }
-        
-        .progress-bar { background: #333; height: 12px; border-radius: 6px; overflow: hidden; position: relative; cursor: pointer; border: 1px solid #444; }
-        .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 1s ease-out; }
-        
-        .poll-btn { 
-            width: 100%; padding: 12px; margin-top: 5px; background: transparent; 
-            border: 1px solid #444; color: white; border-radius: 8px; cursor: pointer; transition: 0.3s;
+        :root { --gold: #d4af37; --bg: #0f0f0f; --card: #1a1a1a; --text: #e0e0e0; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); color: var(--text); 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; 
         }
-        .poll-btn:hover:not(:disabled) { background: var(--primary); color: black; border-color: var(--primary); }
-        .poll-btn:disabled { opacity: 0.3; cursor: default; }
+        .poll-card { 
+            background: var(--card); padding: 40px; border-radius: 24px; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7); 
+            width: 100%; max-width: 440px; border: 1px solid #2a2a2a;
+        }
+        h1 { color: var(--gold); text-align: center; margin: 0 0 5px 0; font-size: 24px; letter-spacing: 1.5px; }
+        .stats-header { text-align: center; color: #666; font-size: 11px; margin-bottom: 30px; letter-spacing: 1px; }
+        
+        #question { font-size: 19px; text-align: center; margin-bottom: 35px; line-height: 1.5; font-weight: 500; }
+        
+        .option-box { margin-bottom: 25px; }
+        .option-label { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; font-weight: 600; }
+        
+        .bar-bg { background: #262626; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 12px; border: 1px solid #333; }
+        .bar-fill { 
+            background: linear-gradient(90deg, #d4af37, #f1c40f); 
+            height: 100%; width: 0%; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); 
+        }
+        
+        .vote-btn { 
+            width: 100%; padding: 14px; background: transparent; 
+            border: 1px solid #444; color: white; border-radius: 10px; 
+            cursor: pointer; transition: 0.3s; font-weight: 700; font-size: 13px; text-transform: uppercase;
+        }
+        .vote-btn:hover:not(:disabled) { background: var(--gold); color: black; border-color: var(--gold); }
+        .vote-btn:disabled { opacity: 0.2; cursor: not-allowed; border-color: #222; }
 
-        #status { margin-top: 20px; text-align: center; font-weight: bold; font-size: 14px; color: var(--primary); }
+        #msg { margin-top: 25px; text-align: center; font-size: 14px; font-weight: bold; min-height: 20px; }
+        
+        /* Loader */
+        .loader { border: 3px solid #222; border-top: 3px solid var(--gold); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="poll-card">
-    <div id="loader">Processing...</div>
-    
-    <div id="poll-content" class="hidden">
-        <h1>LIVE POLL</h1>
-        <div id="total-display" class="vote-count">0 VOTES RECORDED</div>
+    <div id="loading">
+        <div class="loader"></div>
+        <p style="text-align:center; color:#888;">Verifying JECC Credentials...</p>
+    </div>
+
+    <div id="poll-ui" class="hidden">
+        <h1>SECURE POLL</h1>
+        <div id="total-votes" class="stats-header">0 RESPONSES RECORDED</div>
+        <p id="question">Loading...</p>
         <div id="options-list"></div>
-        <div id="status"></div>
+        <div id="msg"></div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "YOUR_SCRIPT_URL_HERE";
+    const SCRIPT_URL = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbykNHYZ-r2yE8LC5rutEnDOLDRAH0N_1t1NF6KqTEAC3fVAvQHpQTC855m4UFSIUgJz/exec";
 
-    async function loadPoll() {
+    async function loadPollData() {
         try {
             const response = await fetch(SCRIPT_URL);
             const data = await response.json();
             const { config, totals, totalVotes } = data;
 
-            document.getElementById('total-display').innerText = `${totalVotes} TOTAL VOTES`;
+            document.getElementById('question').innerText = config["Poll Question"];
+            document.getElementById('total-votes').innerText = `${totalVotes} TOTAL RESPONSES`;
+            
             const container = document.getElementById('options-list');
-            container.innerHTML = '';
-
-            const hasVoted = localStorage.getItem('voted_jecc') === 'true';
+            const alreadyVoted = localStorage.getItem('poll_voted_verified') === 'true';
 
             Object.keys(config).forEach(key => {
-                if(key.toLowerCase().startsWith("option")) {
-                    const choice = config[key];
-                    const count = totals[choice] || 0;
-                    const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                if(key.toLowerCase().includes("option")) {
+                    const label = config[key];
+                    const val = totals[label] || 0;
+                    const pct = totalVotes > 0 ? Math.round((val / totalVotes) * 100) : 0;
 
-                    const html = `
-                        <div class="option-container">
-                            <div class="option-info">
-                                <span>${choice}</span>
-                                <span>${count} (${percent}%)</span>
+                    container.innerHTML += `
+                        <div class="option-box">
+                            <div class="option-label">
+                                <span>${label}</span>
+                                <span style="color:var(--gold)">${val} (${pct}%)</span>
                             </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${percent}%"></div>
+                            <div class="bar-bg">
+                                <div class="bar-fill" style="width: ${pct}%"></div>
                             </div>
-                            <button class="poll-btn" ${hasVoted ? 'disabled' : ''} onclick="castVote('${choice}')">
-                                ${hasVoted ? 'Voted' : 'Select'}
+                            <button class="vote-btn" ${alreadyVoted ? 'disabled' : ''} onclick="castVote('${label}')">
+                                ${alreadyVoted ? 'VOTE RECORDED' : 'CAST VOTE'}
                             </button>
                         </div>
                     `;
-                    container.innerHTML += html;
                 }
             });
 
-            document.getElementById('loader').classList.add('hidden');
-            document.getElementById('poll-content').classList.remove('hidden');
-        } catch (e) {
-            document.getElementById('loader').innerText = "Access Denied. Use JECC account.";
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('poll-ui').classList.remove('hidden');
+
+            if(alreadyVoted) {
+                const msg = document.getElementById('msg');
+                msg.innerText = "You have already participated in this poll.";
+                msg.style.color = var(--gold);
+            }
+        } catch (err) {
+            document.getElementById('loading').innerHTML = `<p style="color:#ff4d4d">Connection Error. Please sign in to your Workspace account.</p>`;
         }
     }
 
     async function castVote(choice) {
-        const status = document.getElementById('status');
-        document.querySelectorAll('.poll-btn').forEach(b => b.disabled = true);
-        status.innerText = "Submitting to S.I.A...";
+        const msg = document.getElementById('msg');
+        const btns = document.querySelectorAll('.vote-btn');
+        
+        btns.forEach(b => b.disabled = true);
+        msg.innerText = "Transmitting secure vote...";
+        msg.style.color = "#3498db";
 
         try {
             const formData = new URLSearchParams();
             formData.append('Choice', choice);
 
-            // POST to script
+            // Fetch for Google Apps Script Web Apps
             await fetch(SCRIPT_URL, { method: 'POST', body: formData });
 
-            localStorage.setItem('voted_jecc', 'true');
-            status.innerText = "✓ Success! Refreshing...";
+            localStorage.setItem('poll_voted_verified', 'true');
+            msg.innerText = "✓ Success! Updating Live Results...";
+            msg.style.color = "#2ecc71";
+            
             setTimeout(() => location.reload(), 1500);
         } catch (e) {
-            status.innerText = "Error submitting vote.";
+            // Logic for potential CORS/Redirect behavior in Google Scripts
+            localStorage.setItem('poll_voted_verified', 'true');
+            location.reload();
         }
     }
 
-    loadPoll();
+    loadPollData();
 </script>
 </body>
 </html>
