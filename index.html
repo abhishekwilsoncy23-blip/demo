@@ -1,57 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Anonymous Voting</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.I.A Anonymous Voting</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .btn { padding: 10px 20px; font-size: 18px; cursor: pointer; margin: 10px; }
-        #message { margin-top: 20px; font-weight: bold; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            padding-top: 50px; 
+            background-color: #1a1a1a; 
+            color: #ffffff; 
+        }
+        .container { 
+            background: #252525; 
+            padding: 40px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            display: inline-block; 
+            max-width: 450px; 
+            width: 90%; 
+            border: 1px solid #333;
+        }
+        h1 { color: #d4af37; font-size: 28px; margin-bottom: 5px; }
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .btn-group { display: flex; justify-content: center; gap: 20px; }
+        
+        .btn { 
+            padding: 15px 35px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            color: white; 
+            text-transform: uppercase;
+        }
+        .btn-red { background-color: #c0392b; box-shadow: 0 4px #962d22; }
+        .btn-blue { background-color: #2980b9; box-shadow: 0 4px #1f6391; }
+        
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn:active { transform: translateY(2px); box-shadow: none; }
+        .btn:disabled { background-color: #444; box-shadow: none; cursor: not-allowed; color: #777; transform: none; }
+        
+        #message { 
+            margin-top: 30px; 
+            font-weight: bold; 
+            min-height: 24px; 
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .footer-note { margin-top: 20px; font-size: 11px; color: #555; }
     </style>
 </head>
 <body>
-    <h1>What is your favorite color?</h1>
-    <button class="btn" onclick="castVote('Red')">Red</button>
-    <button class="btn" onclick="castVote('Blue')">Blue</button>
-    <div id="message"></div>
 
-    <!-- FingerprintJS Library -->
-    <script src="https://openfpcdn.io"></script>
+    <div class="container">
+        <h1>Poll: Favorite Color</h1>
+        <div class="subtitle">Secure Anonymous Voting System</div>
+        
+        <div class="btn-group">
+            <button id="btn-red" class="btn btn-red" onclick="castVote('Red')">RED</button>
+            <button id="btn-blue" class="btn btn-blue" onclick="castVote('Blue')">BLUE</button>
+        </div>
+        
+        <div id="message"></div>
+        <div class="footer-note">Device ID verification active. One vote per user.</div>
+    </div>
+
+    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
 
     <script>
-        const SCRIPT_URL = "YOUR_SCRIPT_URL"; // PASTE YOUR URL HERE
+        // Your Verified Endpoint
+        const SCRIPT_URL = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbzZWS6UH0-R0Zz2R77hTy0aXVx14nanGSBB-oJ2EZR3xQoAz3I09halRPgKXdglf2oY/exec"; 
+
+        // On Load: Check if the user has already voted on this browser
+        window.onload = function() {
+            if (localStorage.getItem('hasVoted') === 'true') {
+                disableVoting("Local records show you have already voted.");
+            }
+        };
+
+        function disableVoting(text) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerText = text;
+            msgDiv.style.color = "#d4af37";
+            document.getElementById('btn-red').disabled = true;
+            document.getElementById('btn-blue').disabled = true;
+        }
 
         async function castVote(choice) {
             const msgDiv = document.getElementById('message');
-            msgDiv.innerText = "Processing...";
+            const redBtn = document.getElementById('btn-red');
+            const blueBtn = document.getElementById('btn-blue');
+
+            // UI Feedback
+            msgDiv.innerText = "Processing secure vote...";
+            msgDiv.style.color = "#3498db";
+            redBtn.disabled = true;
+            blueBtn.disabled = true;
 
             try {
-                // 1. Get the Unique Device ID
+                // 1. Generate Unique Device Fingerprint
                 const fpPromise = FingerprintJS.load();
                 const fp = await fpPromise;
                 const result = await fp.get();
                 const visitorId = result.visitorId;
 
-                // 2. Prepare data
+                // 2. Prepare Data for Google Sheets
                 const formData = new URLSearchParams();
                 formData.append('Choice', choice);
                 formData.append('DeviceID', visitorId);
 
-                // 3. Send to Google Sheets
-                const response = await fetch(SCRIPT_URL, {
+                // 3. Send to Google Sheets (using no-cors for simplicity)
+                await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: formData,
-                    mode: 'no-cors' // Allows sending data without complex setup
+                    mode: 'no-cors' 
                 });
 
-                msgDiv.innerText = "Vote submitted successfully!";
-                msgDiv.style.color = "green";
+                // 4. Success Response
+                msgDiv.innerText = "Vote successfully recorded in the S.I.A Database!";
+                msgDiv.style.color = "#27ae60";
                 
-                // Optional: Store in local browser to block instantly
+                // Save state to prevent immediate re-voting
                 localStorage.setItem('hasVoted', 'true');
 
             } catch (error) {
-                msgDiv.innerText = "Error: Could not submit vote.";
-                msgDiv.style.color = "red";
+                console.error("Submission error:", error);
+                msgDiv.innerText = "System Error: Transmission failed.";
+                msgDiv.style.color = "#e74c3c";
+                // Re-enable buttons if it failed
+                redBtn.disabled = false;
+                blueBtn.disabled = false;
             }
         }
     </script>
