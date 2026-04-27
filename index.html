@@ -5,140 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S.I.A Verified Poll</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0b0b0b; --card: #161616; --text: #f0f0f0; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        
-        .poll-card { background: var(--card); padding: 40px; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); width: 100%; max-width: 400px; border: 1px solid #222; }
-        h1 { color: var(--gold); text-align: center; margin: 0; font-size: 22px; letter-spacing: 2px; }
-        .stats { text-align: center; color: #555; font-size: 10px; margin-bottom: 30px; letter-spacing: 1px; }
-        
-        .option-item { margin-bottom: 25px; }
-        .label-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; font-weight: 600; }
-        
-        .progress-bg { background: #222; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
-        .progress-bar { background: var(--gold); height: 100%; width: 0%; transition: width 1.2s ease; }
-        
-        .vote-btn { 
-            width: 100%; padding: 12px; background: transparent; border: 1px solid #333; 
-            color: white; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 13px;
-        }
-        .vote-btn:hover:not(:disabled) { background: var(--gold); color: black; border-color: var(--gold); }
-        .vote-btn:disabled { opacity: 0.2; cursor: not-allowed; }
-
-        .auth-btn { background: #d4af37; color: black; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
-        .switch-link { display: block; text-align: center; margin-top: 25px; font-size: 12px; color: #3498db; cursor: pointer; text-decoration: underline; }
-        
-        #status-msg { margin-top: 20px; text-align: center; font-size: 14px; font-weight: bold; min-height: 20px; }
+        :root { --gold: #d4af37; --bg: #0b0b0b; --card: #161616; }
+        body { font-family: sans-serif; background: var(--bg); color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .poll-card { background: var(--card); padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #222; text-align: center; }
+        .bar-bg { background: #222; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        .bar-fill { background: var(--gold); height: 100%; width: 0%; transition: width 1s; }
+        .vote-btn { width: 100%; padding: 12px; margin-top: 5px; background: transparent; border: 1px solid #444; color: #fff; border-radius: 8px; cursor: pointer; }
+        .vote-btn:hover { background: var(--gold); color: #000; }
         .hidden { display: none; }
-        .loader { border: 3px solid #222; border-top: 3px solid var(--gold); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .auth-btn { background: var(--gold); color: #000; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; width: 100%; }
     </style>
 </head>
 <body>
 
 <div class="poll-card">
     <div id="auth-ui">
-        <div class="loader"></div>
-        <p style="text-align:center; color:#888; font-size: 14px;">Establishing Secure Connection...</p>
-        <button onclick="handleAuth()" class="auth-btn">VERIFY @JECC ACCOUNT</button>
-        <p style="font-size: 11px; color:#555; text-align:center; margin-top:10px;">Login required to prevent duplicate entries.</p>
+        <h2 style="color:var(--gold)">Authentication Required</h2>
+        <p style="font-size: 14px; color: #888;">To ensure a fair vote, please verify your @jecc.ac.in account.</p>
+        <button onclick="openAuth()" class="auth-btn">VERIFY ACCOUNT</button>
     </div>
 
     <div id="poll-ui" class="hidden">
-        <h1>S.I.A SYSTEMS</h1>
-        <div id="total-count" class="stats">0 RESPONSES</div>
-        <p id="question" style="text-align:center; margin-bottom:30px; font-weight:500;"></p>
-        <div id="options-container"></div>
-        <div id="status-msg"></div>
-        <span class="switch-link" onclick="handleAuth()">Switch JECC Account</span>
+        <h1 id="title" style="color:var(--gold)">LIVE POLL</h1>
+        <p id="question"></p>
+        <div id="options"></div>
+        <div id="msg" style="margin-top:20px; font-weight:bold;"></div>
     </div>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbykNHYZ-r2yE8LC5rutEnDOLDRAH0N_1t1NF6KqTEAC3fVAvQHpQTC855m4UFSIUgJz/exec";
 
-    // Open Google Login in a popup
-    function handleAuth() {
-        const authWin = window.open(SCRIPT_URL, "JECC_Auth", "width=500,height=600");
-        const checkWin = setInterval(() => {
-            if (authWin.closed) {
-                clearInterval(checkWin);
-                location.reload(); 
+    function openAuth() {
+        const win = window.open(SCRIPT_URL, "Auth", "width=500,height=600");
+        const timer = setInterval(() => {
+            if (win.closed) {
+                clearInterval(timer);
+                location.reload();
             }
         }, 500);
     }
 
-    async function init() {
-        try {
-            // Attempt to fetch data
-            const res = await fetch(SCRIPT_URL);
-            if (!res.ok) throw new Error("Blocked");
+    // This is the JSONP Callback function
+    window.handlePollData = function(data) {
+        const { config, totals, totalVotes } = data;
+        document.getElementById('question').innerText = config["Poll Question"];
+        
+        const container = document.getElementById('options');
+        const hasVoted = localStorage.getItem('voted_verified') === 'true';
 
-            const data = await res.json();
-            const { config, totals, totalVotes } = data;
+        Object.keys(config).forEach(key => {
+            if(key.toLowerCase().includes("option")) {
+                const label = config[key];
+                const count = totals[label] || 0;
+                const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
 
-            document.getElementById('question').innerText = config["Poll Question"];
-            document.getElementById('total-count').innerText = `${totalVotes} TOTAL RESPONSES`;
-            
-            const container = document.getElementById('options-container');
-            const hasVoted = localStorage.getItem('voted_verified_jecc') === 'true';
-
-            Object.keys(config).forEach(key => {
-                if(key.toLowerCase().includes("option")) {
-                    const label = config[key];
-                    const count = totals[label] || 0;
-                    const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-
-                    container.innerHTML += `
-                        <div class="option-item">
-                            <div class="label-row">
-                                <span>${label}</span>
-                                <span style="color:var(--gold)">${pct}%</span>
-                            </div>
-                            <div class="progress-bg"><div class="progress-bar" style="width:${pct}%"></div></div>
-                            <button class="vote-btn" ${hasVoted ? 'disabled' : ''} onclick="castVote('${label}')">
-                                ${hasVoted ? 'SELECTION SAVED' : 'SELECT'}
-                            </button>
+                container.innerHTML += `
+                    <div style="margin-bottom:20px; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px;">
+                            <span>${label}</span><span>${pct}%</span>
                         </div>
-                    `;
-                }
-            });
-
-            document.getElementById('auth-ui').classList.add('hidden');
-            document.getElementById('poll-ui').classList.remove('hidden');
-
-            if(hasVoted) {
-                const msg = document.getElementById('status-msg');
-                msg.innerText = "You have already voted.";
-                msg.style.color = "var(--gold)";
+                        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+                        <button class="vote-btn" ${hasVoted ? 'disabled' : ''} onclick="castVote('${label}')">
+                            ${hasVoted ? 'Registered' : 'Vote'}
+                        </button>
+                    </div>
+                `;
             }
+        });
 
-        } catch (err) {
-            // If fetch fails, we stay on the auth-ui screen
-            console.log("Waiting for user authentication...");
-        }
+        document.getElementById('auth-ui').classList.add('hidden');
+        document.getElementById('poll-ui').classList.remove('hidden');
+    };
+
+    // Trigger JSONP Request
+    function init() {
+        const script = document.createElement('script');
+        script.src = `${SCRIPT_URL}?callback=handlePollData`;
+        document.body.appendChild(script);
+        
+        // Error handling for blocked scripts
+        script.onerror = () => {
+            console.log("Waiting for user login...");
+        };
     }
 
     async function castVote(choice) {
-        const msg = document.getElementById('status-msg');
-        msg.innerText = "Encrypting Vote...";
-        document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
-
-        try {
-            const params = new URLSearchParams();
-            params.append('Choice', choice);
-
-            // POST to Google Script
-            await fetch(SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
-
-            localStorage.setItem('voted_verified_jecc', 'true');
-            msg.innerText = "✓ Vote Recorded Successfully";
-            msg.style.color = "#2ecc71";
-            setTimeout(() => location.reload(), 1500);
-        } catch (e) {
-            localStorage.setItem('voted_verified_jecc', 'true');
-            location.reload();
-        }
+        const params = new URLSearchParams();
+        params.append('Choice', choice);
+        
+        // POSTs don't return data, so no-cors is fine here
+        await fetch(SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
+        
+        localStorage.setItem('voted_verified', 'true');
+        location.reload();
     }
 
     init();
