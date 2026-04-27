@@ -3,112 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.I.A Professional Poll System</title>
+    <title>S.I.A Real-Time Poll</title>
     <style>
         :root { --primary: #d4af37; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .poll-card { background: var(--card); padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); width: 100%; max-width: 450px; text-align: center; border: 1px solid #333; }
-        h1 { font-size: 24px; margin-bottom: 10px; color: var(--primary); }
-        #question { font-size: 18px; color: #bbb; margin-bottom: 30px; }
-        .options-grid { display: flex; flex-direction: column; gap: 12px; }
+        .poll-card { background: var(--card); padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); width: 100%; max-width: 450px; border: 1px solid #333; }
+        
+        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
+        .vote-count { text-align: center; color: #666; font-size: 12px; margin-bottom: 25px; }
+        
+        .option-container { margin-bottom: 20px; }
+        .option-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; }
+        
+        .progress-bar { background: #333; height: 12px; border-radius: 6px; overflow: hidden; position: relative; cursor: pointer; border: 1px solid #444; }
+        .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 1s ease-out; }
+        
         .poll-btn { 
-            background: #2a2a2a; color: white; border: 1px solid #444; padding: 15px; 
-            border-radius: 10px; cursor: pointer; font-size: 16px; transition: 0.3s;
-            font-weight: 500;
+            width: 100%; padding: 12px; margin-top: 5px; background: transparent; 
+            border: 1px solid #444; color: white; border-radius: 8px; cursor: pointer; transition: 0.3s;
         }
-        .poll-btn:hover:not(:disabled) { background: var(--primary); color: black; border-color: var(--primary); transform: translateY(-2px); }
-        .poll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #status { margin-top: 25px; font-weight: bold; font-size: 14px; min-height: 20px; }
-        .loading-spinner { border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .poll-btn:hover:not(:disabled) { background: var(--primary); color: black; border-color: var(--primary); }
+        .poll-btn:disabled { opacity: 0.3; cursor: default; }
+
+        #status { margin-top: 20px; text-align: center; font-weight: bold; font-size: 14px; color: var(--primary); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="poll-card">
-    <div id="setup-view">
-        <div class="loading-spinner"></div>
-        <p>Fetching Poll Configuration...</p>
-    </div>
-
-    <div id="poll-view" style="display:none;">
-        <h1 id="poll-title">S.I.A SECURE POLL</h1>
-        <p id="question">Loading question...</p>
-        <div id="options-container" class="options-grid"></div>
+    <div id="loader">Processing...</div>
+    
+    <div id="poll-content" class="hidden">
+        <h1>LIVE POLL</h1>
+        <div id="total-display" class="vote-count">0 VOTES RECORDED</div>
+        <div id="options-list"></div>
         <div id="status"></div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 <script>
-    const SCRIPT_URL = "YOUR_NEW_DEPLOYMENT_URL"; 
+    const SCRIPT_URL = "YOUR_SCRIPT_URL_HERE";
 
-    async function initPoll() {
+    async function loadPoll() {
         try {
-            // 1. Fetch config from Google Sheet
             const response = await fetch(SCRIPT_URL);
-            const config = await response.json();
+            const data = await response.json();
+            const { config, totals, totalVotes } = data;
 
-            // 2. Setup UI
-            document.getElementById('question').innerText = config["Poll Question"];
-            const container = document.getElementById('options-container');
-            
-            // Loop through options in config
+            document.getElementById('total-display').innerText = `${totalVotes} TOTAL VOTES`;
+            const container = document.getElementById('options-list');
+            container.innerHTML = '';
+
+            const hasVoted = localStorage.getItem('voted_jecc') === 'true';
+
             Object.keys(config).forEach(key => {
-                if(key.startsWith("Option")) {
-                    const btn = document.createElement('button');
-                    btn.className = 'poll-btn';
-                    btn.innerText = config[key];
-                    btn.onclick = () => castVote(config[key]);
-                    container.appendChild(btn);
+                if(key.toLowerCase().startsWith("option")) {
+                    const choice = config[key];
+                    const count = totals[choice] || 0;
+                    const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+
+                    const html = `
+                        <div class="option-container">
+                            <div class="option-info">
+                                <span>${choice}</span>
+                                <span>${count} (${percent}%)</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percent}%"></div>
+                            </div>
+                            <button class="poll-btn" ${hasVoted ? 'disabled' : ''} onclick="castVote('${choice}')">
+                                ${hasVoted ? 'Voted' : 'Select'}
+                            </button>
+                        </div>
+                    `;
+                    container.innerHTML += html;
                 }
             });
 
-            document.getElementById('setup-view').style.display = 'none';
-            document.getElementById('poll-view').style.display = 'block';
-
-            if (localStorage.getItem('hasVoted') === 'true') {
-                lockPoll("You have already participated in this poll.");
-            }
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('poll-content').classList.remove('hidden');
         } catch (e) {
-            document.getElementById('setup-view').innerText = "Failed to load poll configuration.";
+            document.getElementById('loader').innerText = "Access Denied. Use JECC account.";
         }
     }
 
     async function castVote(choice) {
         const status = document.getElementById('status');
-        const buttons = document.querySelectorAll('.poll-btn');
-        
-        buttons.forEach(b => b.disabled = true);
-        status.innerText = "Encrypting & Sending...";
-        status.style.color = "var(--primary)";
+        document.querySelectorAll('.poll-btn').forEach(b => b.disabled = true);
+        status.innerText = "Submitting to S.I.A...";
 
         try {
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-            
             const formData = new URLSearchParams();
             formData.append('Choice', choice);
-            formData.append('DeviceID', result.visitorId);
 
-            await fetch(SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
+            // POST to script
+            await fetch(SCRIPT_URL, { method: 'POST', body: formData });
 
-            status.innerText = "✓ Vote Received Anonymously";
-            status.style.color = "#27ae60";
-            localStorage.setItem('hasVoted', 'true');
+            localStorage.setItem('voted_jecc', 'true');
+            status.innerText = "✓ Success! Refreshing...";
+            setTimeout(() => location.reload(), 1500);
         } catch (e) {
-            status.innerText = "Transmission Error.";
-            buttons.forEach(b => b.disabled = false);
+            status.innerText = "Error submitting vote.";
         }
     }
 
-    function lockPoll(msg) {
-        document.getElementById('status').innerText = msg;
-        document.querySelectorAll('.poll-btn').forEach(b => b.disabled = true);
-    }
-
-    initPoll();
+    loadPoll();
 </script>
-
 </body>
 </html>
