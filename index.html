@@ -3,141 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.I.A Anonymous Voting</title>
+    <title>S.I.A Professional Poll System</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            padding-top: 50px; 
-            background-color: #1a1a1a; 
-            color: #ffffff; 
+        :root { --primary: #d4af37; --bg: #121212; --card: #1e1e1e; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .poll-card { background: var(--card); padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); width: 100%; max-width: 450px; text-align: center; border: 1px solid #333; }
+        h1 { font-size: 24px; margin-bottom: 10px; color: var(--primary); }
+        #question { font-size: 18px; color: #bbb; margin-bottom: 30px; }
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
+        .poll-btn { 
+            background: #2a2a2a; color: white; border: 1px solid #444; padding: 15px; 
+            border-radius: 10px; cursor: pointer; font-size: 16px; transition: 0.3s;
+            font-weight: 500;
         }
-        .container { 
-            background: #252525; 
-            padding: 40px; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            display: inline-block; 
-            max-width: 450px; 
-            width: 90%; 
-            border: 1px solid #333;
-        }
-        h1 { color: #d4af37; font-size: 28px; margin-bottom: 5px; }
-        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .btn-group { display: flex; justify-content: center; gap: 20px; }
-        
-        .btn { 
-            padding: 15px 35px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            transition: all 0.3s ease; 
-            color: white; 
-            text-transform: uppercase;
-        }
-        .btn-red { background-color: #c0392b; box-shadow: 0 4px #962d22; }
-        .btn-blue { background-color: #2980b9; box-shadow: 0 4px #1f6391; }
-        
-        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
-        .btn:active { transform: translateY(2px); box-shadow: none; }
-        .btn:disabled { background-color: #444; box-shadow: none; cursor: not-allowed; color: #777; transform: none; }
-        
-        #message { 
-            margin-top: 30px; 
-            font-weight: bold; 
-            min-height: 24px; 
-            font-size: 16px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .footer-note { margin-top: 20px; font-size: 11px; color: #555; }
+        .poll-btn:hover:not(:disabled) { background: var(--primary); color: black; border-color: var(--primary); transform: translateY(-2px); }
+        .poll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status { margin-top: 25px; font-weight: bold; font-size: 14px; min-height: 20px; }
+        .loading-spinner { border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Poll: Favorite Color</h1>
-        <div class="subtitle">Secure Anonymous Voting System</div>
-        
-        <div class="btn-group">
-            <button id="btn-red" class="btn btn-red" onclick="castVote('Red')">RED</button>
-            <button id="btn-blue" class="btn btn-blue" onclick="castVote('Blue')">BLUE</button>
-        </div>
-        
-        <div id="message"></div>
-        <div class="footer-note">Device ID verification active. One vote per user.</div>
+<div class="poll-card">
+    <div id="setup-view">
+        <div class="loading-spinner"></div>
+        <p>Fetching Poll Configuration...</p>
     </div>
 
-    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+    <div id="poll-view" style="display:none;">
+        <h1 id="poll-title">S.I.A SECURE POLL</h1>
+        <p id="question">Loading question...</p>
+        <div id="options-container" class="options-grid"></div>
+        <div id="status"></div>
+    </div>
+</div>
 
-    <script>
-        // Your Verified Endpoint
-        const SCRIPT_URL = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbzZWS6UH0-R0Zz2R77hTy0aXVx14nanGSBB-oJ2EZR3xQoAz3I09halRPgKXdglf2oY/exec"; 
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<script>
+    const SCRIPT_URL = "YOUR_NEW_DEPLOYMENT_URL"; 
 
-        // On Load: Check if the user has already voted on this browser
-        window.onload = function() {
+    async function initPoll() {
+        try {
+            // 1. Fetch config from Google Sheet
+            const response = await fetch(SCRIPT_URL);
+            const config = await response.json();
+
+            // 2. Setup UI
+            document.getElementById('question').innerText = config["Poll Question"];
+            const container = document.getElementById('options-container');
+            
+            // Loop through options in config
+            Object.keys(config).forEach(key => {
+                if(key.startsWith("Option")) {
+                    const btn = document.createElement('button');
+                    btn.className = 'poll-btn';
+                    btn.innerText = config[key];
+                    btn.onclick = () => castVote(config[key]);
+                    container.appendChild(btn);
+                }
+            });
+
+            document.getElementById('setup-view').style.display = 'none';
+            document.getElementById('poll-view').style.display = 'block';
+
             if (localStorage.getItem('hasVoted') === 'true') {
-                disableVoting("Local records show you have already voted.");
+                lockPoll("You have already participated in this poll.");
             }
-        };
-
-        function disableVoting(text) {
-            const msgDiv = document.getElementById('message');
-            msgDiv.innerText = text;
-            msgDiv.style.color = "#d4af37";
-            document.getElementById('btn-red').disabled = true;
-            document.getElementById('btn-blue').disabled = true;
+        } catch (e) {
+            document.getElementById('setup-view').innerText = "Failed to load poll configuration.";
         }
+    }
 
-        async function castVote(choice) {
-            const msgDiv = document.getElementById('message');
-            const redBtn = document.getElementById('btn-red');
-            const blueBtn = document.getElementById('btn-blue');
+    async function castVote(choice) {
+        const status = document.getElementById('status');
+        const buttons = document.querySelectorAll('.poll-btn');
+        
+        buttons.forEach(b => b.disabled = true);
+        status.innerText = "Encrypting & Sending...";
+        status.style.color = "var(--primary)";
 
-            // UI Feedback
-            msgDiv.innerText = "Processing secure vote...";
-            msgDiv.style.color = "#3498db";
-            redBtn.disabled = true;
-            blueBtn.disabled = true;
+        try {
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
+            
+            const formData = new URLSearchParams();
+            formData.append('Choice', choice);
+            formData.append('DeviceID', result.visitorId);
 
-            try {
-                // 1. Generate Unique Device Fingerprint
-                const fpPromise = FingerprintJS.load();
-                const fp = await fpPromise;
-                const result = await fp.get();
-                const visitorId = result.visitorId;
+            await fetch(SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
 
-                // 2. Prepare Data for Google Sheets
-                const formData = new URLSearchParams();
-                formData.append('Choice', choice);
-                formData.append('DeviceID', visitorId);
-
-                // 3. Send to Google Sheets (using no-cors for simplicity)
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    mode: 'no-cors' 
-                });
-
-                // 4. Success Response
-                msgDiv.innerText = "Vote successfully recorded in the S.I.A Database!";
-                msgDiv.style.color = "#27ae60";
-                
-                // Save state to prevent immediate re-voting
-                localStorage.setItem('hasVoted', 'true');
-
-            } catch (error) {
-                console.error("Submission error:", error);
-                msgDiv.innerText = "System Error: Transmission failed.";
-                msgDiv.style.color = "#e74c3c";
-                // Re-enable buttons if it failed
-                redBtn.disabled = false;
-                blueBtn.disabled = false;
-            }
+            status.innerText = "✓ Vote Received Anonymously";
+            status.style.color = "#27ae60";
+            localStorage.setItem('hasVoted', 'true');
+        } catch (e) {
+            status.innerText = "Transmission Error.";
+            buttons.forEach(b => b.disabled = false);
         }
-    </script>
+    }
+
+    function lockPoll(msg) {
+        document.getElementById('status').innerText = msg;
+        document.querySelectorAll('.poll-btn').forEach(b => b.disabled = true);
+    }
+
+    initPoll();
+</script>
+
 </body>
 </html>
