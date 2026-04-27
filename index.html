@@ -17,7 +17,6 @@
     .vote-btn { width: 100%; padding: 12px; margin-top: 10px; background: transparent; border: 1px solid #444; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
     .vote-btn:hover:not(:disabled) { background: var(--gold); color: black; border-color: var(--gold); }
     .vote-btn:disabled { opacity: 0.2; cursor: not-allowed; }
-    .auth-ui { text-align: center; }
     .verify-btn { background: var(--gold); color: black; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 20px; }
     #msg { margin-top: 20px; text-align: center; font-weight: bold; color: var(--gold); }
     .hidden { display: none; }
@@ -43,9 +42,9 @@
 </div>
 
 <script>
-  // Two separate endpoints
-  const DATA_URL   = "YOUR_DATA_DEPLOYMENT_URL";   // JSONP + POST
-  const VERIFY_URL = "YOUR_VERIFY_DEPLOYMENT_URL"; // HTML verification
+  const BASE_URL   = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbykNHYZ-r2yE8LC5rutEnDOLDRAH0N_1t1NF6KqTEAC3fVAvQHpQTC855m4UFSIUgJz/exec";
+  const DATA_URL   = BASE_URL;               // JSONP + POST
+  const VERIFY_URL = BASE_URL + "?auth=true"; // Verification popup
 
   function verifyAccount() {
     const win = window.open(VERIFY_URL, "Auth", "width=500,height=500");
@@ -57,7 +56,6 @@
     }, 500);
   }
 
-  // JSONP Callback handler
   window.renderPoll = function(data) {
     const { config, totals, totalVotes } = data;
     document.getElementById('question').innerText = config["Poll Question"];
