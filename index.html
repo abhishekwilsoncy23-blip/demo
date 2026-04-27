@@ -1,130 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.I.A Verified Poll</title>
-    <style>
-        :root { --gold: #d4af37; --bg: #0b0b0b; --card: #161616; --text: #e0e0e0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        
-        .poll-card { background: var(--card); padding: 40px; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); width: 100%; max-width: 400px; border: 1px solid #222; }
-        h1 { color: var(--gold); text-align: center; margin: 0; font-size: 22px; letter-spacing: 2px; }
-        .stats { text-align: center; color: #555; font-size: 10px; margin-bottom: 30px; }
-        
-        .option-item { margin-bottom: 20px; text-align: left; }
-        .label-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
-        
-        .bar-bg { background: #222; height: 8px; border-radius: 4px; overflow: hidden; }
-        .bar-fill { background: var(--gold); height: 100%; width: 0%; transition: width 1.2s ease; }
-        
-        .vote-btn { width: 100%; padding: 12px; margin-top: 10px; background: transparent; border: 1px solid #444; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .vote-btn:hover:not(:disabled) { background: var(--gold); color: black; border-color: var(--gold); }
-        .vote-btn:disabled { opacity: 0.2; cursor: not-allowed; }
-
-        .auth-ui { text-align: center; }
-        .verify-btn { background: var(--gold); color: black; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 20px; }
-        
-        #msg { margin-top: 20px; text-align: center; font-weight: bold; color: var(--gold); }
-        .hidden { display: none; }
-        .loader { border: 3px solid #222; border-top: 3px solid var(--gold); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S.I.A Verified Poll</title>
+  <style>
+    :root { --gold: #d4af37; --bg: #0b0b0b; --card: #161616; --text: #e0e0e0; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .poll-card { background: var(--card); padding: 40px; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); width: 100%; max-width: 400px; border: 1px solid #222; }
+    h1 { color: var(--gold); text-align: center; margin: 0; font-size: 22px; letter-spacing: 2px; }
+    .stats { text-align: center; color: #555; font-size: 10px; margin-bottom: 30px; }
+    .option-item { margin-bottom: 20px; text-align: left; }
+    .label-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+    .bar-bg { background: #222; height: 8px; border-radius: 4px; overflow: hidden; }
+    .bar-fill { background: var(--gold); height: 100%; width: 0%; transition: width 1.2s ease; }
+    .vote-btn { width: 100%; padding: 12px; margin-top: 10px; background: transparent; border: 1px solid #444; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .vote-btn:hover:not(:disabled) { background: var(--gold); color: black; border-color: var(--gold); }
+    .vote-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+    .auth-ui { text-align: center; }
+    .verify-btn { background: var(--gold); color: black; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 20px; }
+    #msg { margin-top: 20px; text-align: center; font-weight: bold; color: var(--gold); }
+    .hidden { display: none; }
+    .loader { border: 3px solid #222; border-top: 3px solid var(--gold); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-
 <div class="poll-card">
-    <div id="auth-view">
-        <div class="loader"></div>
-        <p style="text-align:center; color:#888; margin-top:15px;">Establishing Secure Link...</p>
-        <button onclick="verifyAccount()" class="verify-btn">VERIFY @JECC ACCOUNT</button>
-    </div>
-
-    <div id="poll-view" class="hidden">
-        <h1>SECURE POLL</h1>
-        <div id="total-votes" class="stats">0 RESPONSES</div>
-        <p id="question" style="text-align:center; font-weight:500;"></p>
-        <div id="options-box"></div>
-        <div id="msg"></div>
-        <p onclick="verifyAccount()" style="text-align:center; font-size:11px; color:#3498db; cursor:pointer; margin-top:20px; text-decoration:underline;">Switch Account</p>
-    </div>
+  <div id="auth-view">
+    <div class="loader"></div>
+    <p style="text-align:center; color:#888; margin-top:15px;">Establishing Secure Link...</p>
+    <button onclick="verifyAccount()" class="verify-btn">VERIFY @JECC ACCOUNT</button>
+  </div>
+  <div id="poll-view" class="hidden">
+    <h1>SECURE POLL</h1>
+    <div id="total-votes" class="stats">0 RESPONSES</div>
+    <p id="question" style="text-align:center; font-weight:500;"></p>
+    <div id="options-box"></div>
+    <div id="msg"></div>
+    <p onclick="verifyAccount()" style="text-align:center; font-size:11px; color:#3498db; cursor:pointer; margin-top:20px; text-decoration:underline;">Switch Account</p>
+  </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/a/macros/jecc.ac.in/s/AKfycbykNHYZ-r2yE8LC5rutEnDOLDRAH0N_1t1NF6KqTEAC3fVAvQHpQTC855m4UFSIUgJz/exec";
+  // Two separate endpoints
+  const DATA_URL   = "YOUR_DATA_DEPLOYMENT_URL";   // JSONP + POST
+  const VERIFY_URL = "YOUR_VERIFY_DEPLOYMENT_URL"; // HTML verification
 
-    function verifyAccount() {
-        // Opens the script's HTML output, NOT the JSON
-        const win = window.open(SCRIPT_URL, "Auth", "width=500,height=500");
-        const timer = setInterval(() => {
-            if (win.closed) {
-                clearInterval(timer);
-                location.reload(); 
-            }
-        }, 500);
+  function verifyAccount() {
+    const win = window.open(VERIFY_URL, "Auth", "width=500,height=500");
+    const timer = setInterval(() => {
+      if (win.closed) {
+        clearInterval(timer);
+        location.reload();
+      }
+    }, 500);
+  }
+
+  // JSONP Callback handler
+  window.renderPoll = function(data) {
+    const { config, totals, totalVotes } = data;
+    document.getElementById('question').innerText = config["Poll Question"];
+    document.getElementById('total-votes').innerText = `${totalVotes} TOTAL RESPONSES`;
+
+    const container = document.getElementById('options-box');
+    container.innerHTML = "";
+    const hasVoted = localStorage.getItem('voted_verified') === 'true';
+
+    Object.keys(config).forEach(key => {
+      if(key.toLowerCase().includes("option")) {
+        const label = config[key];
+        const count = totals[label] || 0;
+        const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+        container.innerHTML += `
+          <div class="option-item">
+            <div class="label-row"><span>${label}</span><span>${pct}%</span></div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+            <button class="vote-btn" ${hasVoted ? 'disabled' : ''} onclick="castVote('${label}')">
+              ${hasVoted ? 'Registered' : 'Cast Vote'}
+            </button>
+          </div>
+        `;
+      }
+    });
+
+    document.getElementById('auth-view').classList.add('hidden');
+    document.getElementById('poll-view').classList.remove('hidden');
+  };
+
+  function init() {
+    const script = document.createElement('script');
+    script.src = `${DATA_URL}?callback=renderPoll`;
+    document.body.appendChild(script);
+    script.onerror = () => { console.log("User must verify account first."); };
+  }
+
+  async function castVote(choice) {
+    const msg = document.getElementById('msg');
+    msg.innerText = "Saving vote...";
+    document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+    const params = new URLSearchParams();
+    params.append('Choice', choice);
+    try {
+      await fetch(DATA_URL, { method: 'POST', body: params, mode: 'no-cors' });
+      localStorage.setItem('voted_verified', 'true');
+      msg.innerText = "✓ Success! Updating...";
+      setTimeout(() => location.reload(), 1500);
+    } catch (e) {
+      localStorage.setItem('voted_verified', 'true');
+      location.reload();
     }
+  }
 
-    // JSONP Callback handler
-    window.renderPoll = function(data) {
-        const { config, totals, totalVotes } = data;
-        document.getElementById('question').innerText = config["Poll Question"];
-        document.getElementById('total-votes').innerText = `${totalVotes} TOTAL RESPONSES`;
-        
-        const container = document.getElementById('options-box');
-        const hasVoted = localStorage.getItem('voted_verified') === 'true';
-
-        Object.keys(config).forEach(key => {
-            if(key.toLowerCase().includes("option")) {
-                const label = config[key];
-                const count = totals[label] || 0;
-                const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-
-                container.innerHTML += `
-                    <div class="option-item">
-                        <div class="label-row"><span>${label}</span><span>${pct}%</span></div>
-                        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
-                        <button class="vote-btn" ${hasVoted ? 'disabled' : ''} onclick="castVote('${label}')">
-                            ${hasVoted ? 'Registered' : 'Cast Vote'}
-                        </button>
-                    </div>
-                `;
-            }
-        });
-
-        document.getElementById('auth-view').classList.add('hidden');
-        document.getElementById('poll-view').classList.remove('hidden');
-    };
-
-    function init() {
-        // Request data via JSONP script injection
-        const script = document.createElement('script');
-        script.src = `${SCRIPT_URL}?callback=renderPoll`;
-        document.body.appendChild(script);
-        
-        // If script fails (due to 302 redirect), user stays on Auth view
-        script.onerror = () => { console.log("User must verify account first."); };
-    }
-
-    async function castVote(choice) {
-        const msg = document.getElementById('msg');
-        msg.innerText = "Saving vote...";
-        document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
-
-        const params = new URLSearchParams();
-        params.append('Choice', choice);
-
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
-            localStorage.setItem('voted_verified', 'true');
-            msg.innerText = "✓ Success! Updating...";
-            setTimeout(() => location.reload(), 1500);
-        } catch (e) {
-            localStorage.setItem('voted_verified', 'true');
-            location.reload();
-        }
-    }
-
-    init();
+  init();
 </script>
 </body>
 </html>
